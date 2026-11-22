@@ -1,0 +1,18 @@
+
+# Fichiers temporaires de Visual Studio
+.vs/
+*.user
+*.suo
+
+# Fichiers de compilation
+Debug/
+Release/
+x64/
+x86/
+*.obj
+*.exe
+*.pdb
+*.ilk
+
+# Données locales des étudiants
+students.txt
