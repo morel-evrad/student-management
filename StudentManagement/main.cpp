@@ -27,6 +27,19 @@ double calculateAverage(const Student& student) {
 
     return sum / student.grades.size();
 }
+void printStudent(const Student& student) {
+    cout << "ID: " << student.id << " | Имя: " << student.name;
+    if (student.grades.empty()) {
+        cout << " | Нет оценок\n";
+        return;
+    }
+    cout << " | Оценки:";
+    for (double grade : student.grades) {
+        cout << ' ' << grade;
+    }
+    cout << " | Средний балл: " << calculateAverage(student) << '\n';
+}
+
 void saveStudents(const vector<Student>& students) {
     ofstream file("students.txt");
 
@@ -177,8 +190,7 @@ int main() {
             }
             else {
                 for (const auto& s : students) {
-                    cout << "ID: " << s.id
-                        << " | Имя: " << s.name << "\n";
+                    printStudent(s);
                 }
             }
         }
@@ -194,7 +206,7 @@ int main() {
 
             for (const auto& s : students) {
                 if (s.id == id) {
-                    cout << "Найден студент: " << s.name << "\n";
+                    printStudent(s);
                     found = true;
                     break;
                 }
