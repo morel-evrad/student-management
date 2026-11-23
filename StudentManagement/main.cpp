@@ -1,5 +1,8 @@
 
 #include <algorithm>
+#include <cmath>
+#include <filesystem>
+#include <unordered_set>
 #include <iostream>
 #include <windows.h>
 #include <vector>
@@ -66,54 +69,59 @@ void saveStudents(const vector<Student>& students) {
     cout << "Данные успешно сохранены!\n";
 }
 
-void loadStudents(vector<Student>& students) {
+template <typename Number>
+bool parseNumber(const string& line, Number& number) {
+    istringstream input(line);
+    input.imbue(locale::classic());
+    return (input >> number) && (input >> ws).eof();
+}
+
+bool validGrade(double grade) {
+    return isfinite(grade) && grade >= 0 && grade <= 20;
+}
+
+bool loadStudents(vector<Student>& students) {
+    error_code error;
+    if (!filesystem::exists("students.txt", error)) {
+        return !error;
+    }
+
     ifstream file("students.txt");
-
-    if (!file.is_open()) {
-        return;
+    if (!file) {
+        return false;
     }
 
-    file.imbue(locale::classic());
-    Student s;
-
-    while (file >> s.id) {
-        file.ignore(10000,'\n');
-
-        if (!getline(file, s.name)) {
-            break;
+    vector<Student> loaded;
+    unordered_set<int> ids;
+    string line;
+    while (getline(file, line)) {
+        Student student;
+        long long gradeCount;
+        if (!parseNumber(line, student.id) || !ids.insert(student.id).second ||
+            !getline(file, student.name) || !getline(file, line) ||
+            !parseNumber(line, gradeCount) || gradeCount < 0) {
+            return false;
         }
-        size_t gradeCount = 0;
-
-        if (!(file >> gradeCount)) {
-            break;
-        }
-
-        s.grades.clear();
-
-        for (size_t i = 0; i < gradeCount; i++) {
+        for (long long i = 0; i < gradeCount; ++i) {
             double grade;
-
-            if (!(file >> grade)) {
-                return;
+            if (!getline(file, line) || !parseNumber(line, grade) || !validGrade(grade)) {
+                return false;
             }
-
-            s.grades.push_back(grade);
+            student.grades.push_back(grade);
         }
-        students.push_back(s);
+        loaded.push_back(move(student));
     }
-
-    file.close();
+    if (!file.eof() || file.bad()) {
+        return false;
+    }
+    students.swap(loaded);
+    return true;
 }
 
 template <typename Number>
 bool readNumber(Number& number) {
     string line;
-    if (!getline(cin, line)) {
-        return false;
-    }
-
-    istringstream input(line);
-    return (input >> number) && (input >> ws).eof();
+    return getline(cin, line) && parseNumber(line, number);
 }
 
 bool readName(string& name) {
@@ -136,7 +144,10 @@ int main() {
     SetConsoleCP(CP_UTF8);
 
     vector<Student> students;
-    loadStudents(students);
+    if (!loadStudents(students)) {
+        cerr << "Не удалось прочитать students.txt. Проверьте файл данных.\n";
+        return 1;
+    }
 
     while (true) {
         cout << "\n=== СИСТЕМА УПРАВЛЕНИЯ СТУДЕНТАМИ ===\n";
@@ -304,7 +315,7 @@ int main() {
                     double grade;
                     cout << "Введите оценку (0-20): ";
 
-                    if (!readNumber(grade) || grade < 0 || grade > 20) {
+                    if (!readNumber(grade) || !validGrade(grade)) {
                         cout << "Ошибка! Оценка должна быть от 0 до 20.\n";
                         break;
                     }
