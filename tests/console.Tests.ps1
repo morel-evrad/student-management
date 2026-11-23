@@ -120,7 +120,50 @@ try {
         throw 'A failed replacement left a temporary file.'
     }
     Write-Output 'PASS: corrupt data protection, grade precision and failed file replacement'
+
+    $output = Invoke-StudentManagement @(
+        '8', '17', '-1', '8', '17', '1', '50', '8', '17', '1', '16.5',
+        '9', '17', '1', 'n', '6', '17', '9.5', '9', '17', '2', 'Y',
+        '1', '3', 'Борис, "Б"', '1', '4', '=2+2', '2', '10', '11', '0'
+    )
+    Assert-Contains $output 'Неверный номер оценки.'
+    Assert-Contains $output 'Ошибка! Оценка должна быть от 0 до 20.'
+    Assert-Contains $output 'Оценка изменена.'
+    Assert-Contains $output 'Удаление отменено.'
+    Assert-Contains $output 'Оценка удалена.'
+    Assert-Contains $output 'Студентов с оценками: 1 / 4'
+    Assert-Contains $output 'Всего оценок: 1'
+    Assert-Contains $output 'Среднее всех оценок: 16.5'
+    Assert-Contains $output 'Минимум: 16.5 | Максимум: 16.5'
+    $listedIds = [regex]::Matches($output, 'ID: (\d+) \| Имя:') | ForEach-Object { $_.Groups[1].Value }
+    if (($listedIds -join ',') -ne '3,4,17,18') {
+        throw 'Students were not listed in ascending ID order.'
+    }
+
+    $report = "$data.csv"
+    $rows = Import-Csv -LiteralPath $report
+    $row = $rows | Where-Object id -eq '3'
+    if ($row.name -cne 'Борис, "Б"' -or $row.grade_count -ne '0' -or $row.average -ne '') {
+        throw 'CSV did not preserve the escaped name or blank average.'
+    }
+    $row = $rows | Where-Object id -eq '4'
+    if ($row.name -cne "'=2+2") {
+        throw 'CSV did not neutralize the formula-like name.'
+    }
+    $row = $rows | Where-Object id -eq '17'
+    if ($row.grade_count -ne '1' -or $row.average -ne '16.5') {
+        throw 'CSV reported an incorrect grade count or average.'
+    }
+
+    $output = Invoke-StudentManagement @('3', '17', '6', '17', '19', '11', '0')
+    Assert-Contains $output 'ID: 17 | Имя: Anna | Оценки: 16.5'
+    Assert-Contains $output 'Не удалось экспортировать CSV.'
+    $retained = Import-Csv -LiteralPath $report | Where-Object id -eq '17'
+    if ($retained.average -ne '16.5') {
+        throw 'Export overwrote an existing report.'
+    }
+    Write-Output 'PASS: grade editing, grade deletion, summary, ordered listing and CSV export'
 } finally {
-    Remove-Item -LiteralPath $data -ErrorAction SilentlyContinue
+    Get-ChildItem -LiteralPath $testDirectory.FullName -File | Remove-Item
     Remove-Item -LiteralPath $testDirectory.FullName
 }
