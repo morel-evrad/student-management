@@ -46,10 +46,25 @@ void printStudent(const Student& student) {
     cout << " | Средний балл: " << calculateAverage(student) << '\n';
 }
 
+bool makeTemporaryFile(const filesystem::path& target, wchar_t (&temporaryFile)[MAX_PATH]) {
+    const auto parent = target.parent_path();
+    const auto directory = parent.empty() ? filesystem::path(L".") : parent;
+    return GetTempFileNameW(directory.c_str(), L"stu", 0, temporaryFile) != 0;
+}
+
+bool finishFile(ofstream& file, const wchar_t* temporaryFile, const filesystem::path& target, DWORD flags) {
+    file.close();
+    if (file && MoveFileExW(temporaryFile, target.c_str(), flags | MOVEFILE_WRITE_THROUGH)) {
+        return true;
+    }
+    error_code ignored;
+    filesystem::remove(temporaryFile, ignored);
+    return false;
+}
+
 bool saveStudents(const vector<Student>& students, const filesystem::path& dataPath) {
     wchar_t temporaryFile[MAX_PATH];
-    const auto directory = dataPath.parent_path().empty() ? filesystem::path(L".") : dataPath.parent_path();
-    if (!GetTempFileNameW(directory.c_str(), L"stu", 0, temporaryFile)) {
+    if (!makeTemporaryFile(dataPath, temporaryFile)) {
         cerr << "Ошибка сохранения файла!\n";
         return false;
     }
@@ -68,11 +83,7 @@ bool saveStudents(const vector<Student>& students, const filesystem::path& dataP
         }
     }
 
-    file.close();
-    if (!file || !MoveFileExW(temporaryFile, dataPath.c_str(),
-        MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
-        error_code ignored;
-        filesystem::remove(temporaryFile, ignored);
+    if (!finishFile(file, temporaryFile, dataPath, MOVEFILE_REPLACE_EXISTING)) {
         cerr << "Ошибка сохранения файла!\n";
         return false;
     }
@@ -213,6 +224,43 @@ void printGradeSummary(const vector<Student>& students) {
     }
 }
 
+void writeCsvName(ostream& file, const string& name) {
+    file << '"';
+    const auto first = name.find_first_not_of(" \t\r\n\v\f");
+    if (first != string::npos && string_view("=+-@").find(name[first]) != string_view::npos) {
+        file << '\'';
+    }
+    for (char character : name) {
+        if (character == '"') {
+            file << '"';
+        }
+        file << character;
+    }
+    file << '"';
+}
+
+bool exportGradeReport(const vector<Student>& students, const filesystem::path& dataPath) {
+    auto report = dataPath;
+    report += L".csv";
+    wchar_t temporaryFile[MAX_PATH];
+    if (!makeTemporaryFile(report, temporaryFile)) {
+        return false;
+    }
+    ofstream file{filesystem::path(temporaryFile)};
+    file.imbue(locale::classic());
+    file << "\xEF\xBB\xBF" "id,name,grade_count,average\n" << setprecision(10);
+    for (const auto& student : students) {
+        file << student.id << ',';
+        writeCsvName(file, student.name);
+        file << ',' << student.grades.size() << ',';
+        if (!student.grades.empty()) {
+            file << calculateAverage(student);
+        }
+        file << '\n';
+    }
+    return finishFile(file, temporaryFile, report, 0);
+}
+
 class DataFileLock {
 public:
     explicit DataFileLock(const filesystem::path& path)
@@ -273,6 +321,7 @@ int wmain(int argc, wchar_t* argv[]) {
         cout << "8. Исправить оценку\n";
         cout << "9. Удалить оценку\n";
         cout << "10. Показать статистику оценок\n";
+        cout << "11. Экспортировать сводку в CSV\n";
         cout << "0. Выход\n";
         cout << "Выберите действие: ";
 
@@ -521,6 +570,14 @@ int wmain(int argc, wchar_t* argv[]) {
         }
         else if (choix == 10) {
             printGradeSummary(students);
+        }
+        else if (choix == 11) {
+            if (exportGradeReport(students, dataPath)) {
+                cout << "Сводка сохранена рядом с файлом данных (добавлено расширение .csv).\n";
+            }
+            else {
+                cerr << "Не удалось экспортировать CSV. Проверьте доступ и убедитесь, что файл отчета еще не существует.\n";
+            }
         }
         else {
             cout << "Неверный выбор!\n";
