@@ -6,6 +6,8 @@
 #include <string>
 #include <limits>
 #include <fstream>
+#include <iomanip>
+#include <locale>
 #include <sstream>
 using namespace std;
 
@@ -48,6 +50,8 @@ void saveStudents(const vector<Student>& students) {
         return;
     }
 
+    file.imbue(locale::classic());
+    file << setprecision(numeric_limits<double>::max_digits10);
     for (const auto& student : students) {
         file << student.id << "\n";
         file << student.name << "\n";
@@ -69,6 +73,7 @@ void loadStudents(vector<Student>& students) {
         return;
     }
 
+    file.imbue(locale::classic());
     Student s;
 
     while (file >> s.id) {
