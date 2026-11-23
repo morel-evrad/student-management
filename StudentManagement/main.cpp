@@ -46,13 +46,13 @@ void printStudent(const Student& student) {
 }
 
 bool saveStudents(const vector<Student>& students) {
-    constexpr auto temporaryFile = "students.txt.tmp";
-    ofstream file(temporaryFile);
-
-    if (!file.is_open()) {
+    wchar_t temporaryFile[MAX_PATH];
+    if (!GetTempFileNameW(L".", L"stu", 0, temporaryFile)) {
         cerr << "Ошибка сохранения файла!\n";
         return false;
     }
+
+    ofstream file{filesystem::path(temporaryFile)};
 
     file.imbue(locale::classic());
     file << setprecision(numeric_limits<double>::max_digits10);
@@ -67,7 +67,7 @@ bool saveStudents(const vector<Student>& students) {
     }
 
     file.close();
-    if (!file || !MoveFileExW(L"students.txt.tmp", L"students.txt",
+    if (!file || !MoveFileExW(temporaryFile, L"students.txt",
         MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
         error_code ignored;
         filesystem::remove(temporaryFile, ignored);
