@@ -10,7 +10,22 @@ using namespace std;
 struct Student {
     int id = 0;
     string name;
-};void saveStudents(const vector<Student>& students) {
+    vector<double> grades; 
+};
+double calculateAverage(const Student& student) {
+    if (student.grades.empty()) {
+        return 0.0;
+    }
+
+    double sum = 0.0;
+
+    for (double grade : student.grades) {
+        sum += grade;
+    }
+
+    return sum / student.grades.size();
+}
+void saveStudents(const vector<Student>& students) {
     ofstream file("students.txt");
 
     if (!file.is_open()) {
@@ -21,6 +36,11 @@ struct Student {
     for (const auto& student : students) {
         file << student.id << "\n";
         file << student.name << "\n";
+        file << student.grades.size() << "\n";
+
+        for (double grade : student.grades) {
+            file << grade << "\n";
+        }
     }
 
     file.close();
@@ -42,7 +62,23 @@ void loadStudents(vector<Student>& students) {
         if (!getline(file, s.name)) {
             break;
         }
+        size_t gradeCount = 0;
 
+        if (!(file >> gradeCount)) {
+            break;
+        }
+
+        s.grades.clear();
+
+        for (size_t i = 0; i < gradeCount; i++) {
+            double grade;
+
+            if (!(file >> grade)) {
+                return;
+            }
+
+            s.grades.push_back(grade);
+        }
         students.push_back(s);
     }
 
@@ -65,6 +101,7 @@ int main() {
         cout << "3. Найти студента\n";
         cout << "4. Удалить студента\n";
         cout << "5. Изменить данные студента\n";
+        cout << "6. Добавить оценку студенту\n";
         cout << "0. Выход\n";
         cout << "Выберите действие: ";
 
@@ -164,6 +201,45 @@ int main() {
                     saveStudents(students);
 
                     cout << "Данные успешно изменены!\n";
+                    break;
+                }
+            }
+
+            if (!found) {
+                cout << "Студент не найден!\n";
+            }
+        }
+        else if (choix == 6) {
+            int id;
+            cout << "Введите ID студента: ";
+
+            if (!(cin >> id)) {
+                cout << "Ошибка ввода ID!\n";
+                return 1;
+            }
+
+            bool found = false;
+
+            for (auto& student : students) {
+                if (student.id == id) {
+                    found = true;
+
+                    double grade;
+                    cout << "Введите оценку (0-20): ";
+
+                    if (!(cin >> grade) || grade < 0 || grade > 20) {
+                        cout << "Ошибка! Оценка должна быть от 0 до 20.\n";
+                        cin.clear();
+                        cin.ignore((numeric_limits<streamsize>::max)(), '\n');
+                        break;
+                    }
+
+                    student.grades.push_back(grade);
+
+                    cout << "Оценка успешно добавлена!\n";
+                    cout << "Средний балл: "
+                        << calculateAverage(student) << "\n";
+
                     break;
                 }
             }
