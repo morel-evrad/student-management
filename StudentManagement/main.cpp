@@ -98,6 +98,21 @@ bool readNumber(Number& number) {
     return (input >> number) && (input >> ws).eof();
 }
 
+bool readName(string& name) {
+    string line;
+    if (!getline(cin, line)) {
+        return false;
+    }
+    const auto first = line.find_first_not_of(" \t\r\n\v\f");
+    if (first == string::npos) {
+        cout << "Имя не может быть пустым.\n";
+        return false;
+    }
+    const auto last = line.find_last_not_of(" \t\r\n\v\f");
+    name = line.substr(first, last - first + 1);
+    return true;
+}
+
 int main() {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
@@ -148,7 +163,9 @@ int main() {
             }
 
             cout << "Введите имя студента: ";
-            getline(cin, s.name);
+            if (!readName(s.name)) {
+                continue;
+            }
 
             students.push_back(s);
             saveStudents(students);
@@ -229,7 +246,9 @@ int main() {
                     cout << "Текущее имя: " << student.name << "\n";
                     cout << "Введите новое имя: ";
 
-                    getline(cin, student.name);
+                    if (!readName(student.name)) {
+                        break;
+                    }
 
                     saveStudents(students);
 
