@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <vector>
 #include <string>
+#include <string_view>
 #include <limits>
 #include <fstream>
 #include <iomanip>
@@ -45,9 +46,10 @@ void printStudent(const Student& student) {
     cout << " | Средний балл: " << calculateAverage(student) << '\n';
 }
 
-bool saveStudents(const vector<Student>& students) {
+bool saveStudents(const vector<Student>& students, const filesystem::path& dataPath) {
     wchar_t temporaryFile[MAX_PATH];
-    if (!GetTempFileNameW(L".", L"stu", 0, temporaryFile)) {
+    const auto directory = dataPath.parent_path().empty() ? filesystem::path(L".") : dataPath.parent_path();
+    if (!GetTempFileNameW(directory.c_str(), L"stu", 0, temporaryFile)) {
         cerr << "Ошибка сохранения файла!\n";
         return false;
     }
@@ -67,7 +69,7 @@ bool saveStudents(const vector<Student>& students) {
     }
 
     file.close();
-    if (!file || !MoveFileExW(temporaryFile, L"students.txt",
+    if (!file || !MoveFileExW(temporaryFile, dataPath.c_str(),
         MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
         error_code ignored;
         filesystem::remove(temporaryFile, ignored);
@@ -89,13 +91,13 @@ bool validGrade(double grade) {
     return isfinite(grade) && grade >= 0 && grade <= 20;
 }
 
-bool loadStudents(vector<Student>& students) {
+bool loadStudents(vector<Student>& students, const filesystem::path& dataPath) {
     error_code error;
-    if (!filesystem::exists("students.txt", error)) {
+    if (!filesystem::exists(dataPath, error)) {
         return !error;
     }
 
-    ifstream file("students.txt");
+    ifstream file(dataPath);
     if (!file) {
         return false;
     }
@@ -148,13 +150,22 @@ bool readName(string& name) {
     return true;
 }
 
-int main() {
+int wmain(int argc, wchar_t* argv[]) {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
+    filesystem::path dataPath = L"students.txt";
+    if (argc != 1) {
+        if (argc != 3 || wstring_view(argv[1]) != L"--data" || !*argv[2]) {
+            cerr << "Использование: StudentManagement.exe [--data <файл>]\n";
+            return 2;
+        }
+        dataPath = argv[2];
+    }
+
     vector<Student> students;
-    if (!loadStudents(students)) {
-        cerr << "Не удалось прочитать students.txt. Проверьте файл данных.\n";
+    if (!loadStudents(students, dataPath)) {
+        cerr << "Не удалось прочитать " << reinterpret_cast<const char*>(dataPath.u8string().c_str()) << ". Проверьте файл данных.\n";
         return 1;
     }
 
@@ -207,7 +218,7 @@ int main() {
             }
 
             students.push_back(s);
-            if (!saveStudents(students)) {
+            if (!saveStudents(students, dataPath)) {
                 return 1;
             }
             cout << "Студент успешно добавлен!\n";
@@ -265,7 +276,7 @@ int main() {
                         break;
                     }
                     students.erase(it);
-                    if (!saveStudents(students)) {
+                    if (!saveStudents(students, dataPath)) {
                         return 1;
                     }
 
@@ -299,7 +310,7 @@ int main() {
                         break;
                     }
 
-                    if (!saveStudents(students)) {
+                    if (!saveStudents(students, dataPath)) {
 
                         return 1;
 
@@ -338,7 +349,7 @@ int main() {
                     }
 
                     student.grades.push_back(grade);
-                    if (!saveStudents(students)) {
+                    if (!saveStudents(students, dataPath)) {
                         return 1;
                     }
 
