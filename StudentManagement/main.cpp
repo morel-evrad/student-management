@@ -229,11 +229,17 @@ int main() {
 
             for (auto it = students.begin(); it != students.end(); ++it) {
                 if (it->id == id) {
+                    found = true;
+                    cout << "Удалить " << it->name << "? (y/N): ";
+                    string answer;
+                    if (!getline(cin, answer) || (answer != "y" && answer != "Y")) {
+                        cout << "Удаление отменено.\n";
+                        break;
+                    }
                     students.erase(it);
                     saveStudents(students);
 
                     cout << "Студент успешно удалён!\n";
-                    found = true;
                     break;
                 }
             }
