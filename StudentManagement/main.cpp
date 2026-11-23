@@ -242,6 +242,7 @@ int wmain(int argc, wchar_t* argv[]) {
         cout << "6. Добавить оценку студенту\n";
         cout << "7. Найти студентов по имени\n";
         cout << "8. Исправить оценку\n";
+        cout << "9. Удалить оценку\n";
         cout << "0. Выход\n";
         cout << "Выберите действие: ";
 
@@ -466,6 +467,27 @@ int wmain(int argc, wchar_t* argv[]) {
                 return 1;
             }
             cout << "Оценка изменена.\n";
+        }
+        else if (choix == 9) {
+            const auto student = readStudent(students);
+            if (student == students.end()) {
+                continue;
+            }
+            const auto selected = readGradePosition(*student);
+            if (selected == student->grades.end()) {
+                continue;
+            }
+            cout << "Удалить оценку " << *selected << "? (y/N): ";
+            string answer;
+            if (!getline(cin, answer) || (answer != "y" && answer != "Y")) {
+                cout << "Удаление отменено.\n";
+                continue;
+            }
+            student->grades.erase(selected);
+            if (!saveStudents(students, dataPath)) {
+                return 1;
+            }
+            cout << "Оценка удалена.\n";
         }
         else {
             cout << "Неверный выбор!\n";
