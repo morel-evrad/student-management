@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <iostream>
 #include <windows.h>
 #include <vector>
@@ -132,6 +133,17 @@ int main() {
             cout << "Введите ID студента: ";
             if (!readNumber(s.id)) {
                 cout << "Ошибка ввода ID!\n";
+                continue;
+            }
+
+            if (s.id <= 0) {
+                cout << "ID должен быть положительным.\n";
+                continue;
+            }
+            if (any_of(students.begin(), students.end(), [&](const Student& student) {
+                return student.id == s.id;
+            })) {
+                cout << "Студент с таким ID уже существует.\n";
                 continue;
             }
 
