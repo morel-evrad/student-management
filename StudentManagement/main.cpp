@@ -80,6 +80,7 @@ int main() {
         cout << "3. Найти студента\n";
         cout << "4. Удалить студента\n";
         cout << "5. Изменить данные студента\n";
+        cout << "6. Добавить оценку студенту\n";
         cout << "0. Выход\n";
         cout << "Выберите действие: ";
 
@@ -179,6 +180,45 @@ int main() {
                     saveStudents(students);
 
                     cout << "Данные успешно изменены!\n";
+                    break;
+                }
+            }
+
+            if (!found) {
+                cout << "Студент не найден!\n";
+            }
+        }
+        else if (choix == 6) {
+            int id;
+            cout << "Введите ID студента: ";
+
+            if (!(cin >> id)) {
+                cout << "Ошибка ввода ID!\n";
+                return 1;
+            }
+
+            bool found = false;
+
+            for (auto& student : students) {
+                if (student.id == id) {
+                    found = true;
+
+                    double grade;
+                    cout << "Введите оценку (0-20): ";
+
+                    if (!(cin >> grade) || grade < 0 || grade > 20) {
+                        cout << "Ошибка! Оценка должна быть от 0 до 20.\n";
+                        cin.clear();
+                        cin.ignore((numeric_limits<streamsize>::max)(), '\n');
+                        break;
+                    }
+
+                    student.grades.push_back(grade);
+
+                    cout << "Оценка успешно добавлена!\n";
+                    cout << "Средний балл: "
+                        << calculateAverage(student) << "\n";
+
                     break;
                 }
             }
