@@ -10,7 +10,7 @@ $testDirectory = New-Item -ItemType Directory -Path (
 )
 $data = Join-Path $testDirectory.FullName 'students.txt'
 
-function Invoke-StudentManagement([string[]] $Lines, [int] $ExpectedExit = 0) {
+function Invoke-StudentManagement([string[]] $Lines, [int] $ExpectedExit = 0, [string[]] $Arguments = @()) {
     $start = [System.Diagnostics.ProcessStartInfo]::new($Executable)
     $start.WorkingDirectory = $testDirectory.FullName
     $start.UseShellExecute = $false
@@ -20,6 +20,9 @@ function Invoke-StudentManagement([string[]] $Lines, [int] $ExpectedExit = 0) {
     $start.StandardInputEncoding = [System.Text.UTF8Encoding]::new($false)
     $start.StandardOutputEncoding = [System.Text.Encoding]::UTF8
     $start.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+    foreach ($argument in $Arguments) {
+        $start.ArgumentList.Add($argument)
+    }
     $process = [System.Diagnostics.Process]::Start($start)
     try {
         $stdout = $process.StandardOutput.ReadToEndAsync()
@@ -163,6 +166,32 @@ try {
         throw 'Export overwrote an existing report.'
     }
     Write-Output 'PASS: grade editing, grade deletion, summary, ordered listing and CSV export'
+
+    $alternate = 'Группа Б.txt'
+    $alternateFile = Join-Path $testDirectory.FullName $alternate
+    $before = [System.IO.File]::ReadAllText($data)
+    $output = Invoke-StudentManagement @('1', '88', 'Лена', '0') -Arguments @('--data', $alternate)
+    Assert-Contains $output 'Студент успешно добавлен!'
+    $output = Invoke-StudentManagement @('3', '88', '0') -Arguments @('--data', $alternate)
+    Assert-Contains $output 'ID: 88 | Имя: Лена | Нет оценок'
+    $output = Invoke-StudentManagement @() -ExpectedExit 2 -Arguments @('--data')
+    Assert-Contains $output 'Использование:'
+
+    $fileLock = [System.IO.File]::Open("$alternateFile.lock", 'Open', 'ReadWrite', 'None')
+    try {
+        $output = Invoke-StudentManagement @() -ExpectedExit 1 -Arguments @('--data', $alternate)
+        Assert-Contains $output 'Не удалось заблокировать файл данных.'
+        $output = Invoke-StudentManagement @('2', '0')
+        Assert-Contains $output 'Всего студентов: 4'
+    } finally {
+        $fileLock.Dispose()
+    }
+    $output = Invoke-StudentManagement @('3', '88', '0') -Arguments @('--data', $alternate)
+    Assert-Contains $output 'ID: 88 | Имя: Лена | Нет оценок'
+    if ([System.IO.File]::ReadAllText($data) -cne $before) {
+        throw 'Working with an alternate file changed the default data.'
+    }
+    Write-Output 'PASS: alternate Unicode data path, independent datasets and lock contention'
 } finally {
     Get-ChildItem -LiteralPath $testDirectory.FullName -File | Remove-Item
     Remove-Item -LiteralPath $testDirectory.FullName
