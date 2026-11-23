@@ -235,6 +235,7 @@ int main() {
                     }
 
                     student.grades.push_back(grade);
+                    saveStudents(students);
 
                     cout << "Оценка успешно добавлена!\n";
                     cout << "Средний балл: "
