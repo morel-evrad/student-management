@@ -141,6 +141,7 @@ int main() {
         cout << "4. Удалить студента\n";
         cout << "5. Изменить данные студента\n";
         cout << "6. Добавить оценку студенту\n";
+        cout << "7. Найти студентов по имени\n";
         cout << "0. Выход\n";
         cout << "Выберите действие: ";
 
@@ -316,6 +317,23 @@ int main() {
 
             if (!found) {
                 cout << "Студент не найден!\n";
+            }
+        }
+        else if (choix == 7) {
+            cout << "Введите имя или его часть: ";
+            string query;
+            if (!readName(query)) {
+                continue;
+            }
+            bool found = false;
+            for (const auto& student : students) {
+                if (student.name.find(query) != string::npos) {
+                    printStudent(student);
+                    found = true;
+                }
+            }
+            if (!found) {
+                cout << "Студент не найден.\n";
             }
         }
         else {
