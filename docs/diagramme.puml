@@ -1,0 +1,25 @@
+
+@startuml
+title Система управления студентами
+
+class Student {
+  + id : int
+  + name : string
+}
+
+class StudentManagement {
+  + addStudent()
+  + showStudents()
+  + findStudent()
+  + deleteStudent()
+  + editStudent()
+  + saveStudents()
+  + loadStudents()
+}
+
+class "students.txt" as File<<fichier>>
+
+StudentManagement --> Student : управление
+StudentManagement --> File : сохранение и загрузка
+
+@enduml
