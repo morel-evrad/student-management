@@ -185,6 +185,7 @@ int main() {
             cout << "Студент успешно добавлен!\n";
         }
         else if (choix == 2) {
+            cout << "Всего студентов: " << students.size() << '\n';
             if (students.empty()) {
                 cout << "Список студентов пуст.\n";
             }
