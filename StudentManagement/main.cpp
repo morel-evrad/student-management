@@ -150,6 +150,27 @@ bool readName(string& name) {
     return true;
 }
 
+class DataFileLock {
+public:
+    explicit DataFileLock(const filesystem::path& path)
+        : handle(CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
+              OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr)) {}
+
+    ~DataFileLock() {
+        if (isHeld()) {
+            CloseHandle(handle);
+        }
+    }
+
+    DataFileLock(const DataFileLock&) = delete;
+    DataFileLock& operator=(const DataFileLock&) = delete;
+
+    bool isHeld() const { return handle != INVALID_HANDLE_VALUE; }
+
+private:
+    HANDLE handle;
+};
+
 int wmain(int argc, wchar_t* argv[]) {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
@@ -161,6 +182,14 @@ int wmain(int argc, wchar_t* argv[]) {
             return 2;
         }
         dataPath = argv[2];
+    }
+
+    auto lockPath = dataPath;
+    lockPath += L".lock";
+    const DataFileLock lock(lockPath);
+    if (!lock.isHeld()) {
+        cerr << "Не удалось заблокировать файл данных. Закройте другую копию программы и проверьте доступ к папке.\n";
+        return 1;
     }
 
     vector<Student> students;
