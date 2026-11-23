@@ -45,12 +45,13 @@ void printStudent(const Student& student) {
     cout << " | Средний балл: " << calculateAverage(student) << '\n';
 }
 
-void saveStudents(const vector<Student>& students) {
-    ofstream file("students.txt");
+bool saveStudents(const vector<Student>& students) {
+    constexpr auto temporaryFile = "students.txt.tmp";
+    ofstream file(temporaryFile);
 
     if (!file.is_open()) {
-        cout << "Ошибка сохранения файла!\n";
-        return;
+        cerr << "Ошибка сохранения файла!\n";
+        return false;
     }
 
     file.imbue(locale::classic());
@@ -66,7 +67,15 @@ void saveStudents(const vector<Student>& students) {
     }
 
     file.close();
+    if (!file || !MoveFileExW(L"students.txt.tmp", L"students.txt",
+        MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+        error_code ignored;
+        filesystem::remove(temporaryFile, ignored);
+        cerr << "Ошибка сохранения файла!\n";
+        return false;
+    }
     cout << "Данные успешно сохранены!\n";
+    return true;
 }
 
 template <typename Number>
@@ -198,7 +207,9 @@ int main() {
             }
 
             students.push_back(s);
-            saveStudents(students);
+            if (!saveStudents(students)) {
+                return 1;
+            }
             cout << "Студент успешно добавлен!\n";
         }
         else if (choix == 2) {
@@ -254,7 +265,9 @@ int main() {
                         break;
                     }
                     students.erase(it);
-                    saveStudents(students);
+                    if (!saveStudents(students)) {
+                        return 1;
+                    }
 
                     cout << "Студент успешно удалён!\n";
                     break;
@@ -286,7 +299,11 @@ int main() {
                         break;
                     }
 
-                    saveStudents(students);
+                    if (!saveStudents(students)) {
+
+                        return 1;
+
+                    }
 
                     cout << "Данные успешно изменены!\n";
                     break;
@@ -321,7 +338,9 @@ int main() {
                     }
 
                     student.grades.push_back(grade);
-                    saveStudents(students);
+                    if (!saveStudents(students)) {
+                        return 1;
+                    }
 
                     cout << "Оценка успешно добавлена!\n";
                     cout << "Средний балл: "

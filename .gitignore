@@ -16,3 +16,5 @@ x86/
 
 # Données locales des étudiants
 students.txt
+
+students.txt.tmp
