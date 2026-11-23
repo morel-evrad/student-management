@@ -16,3 +16,7 @@ x86/
 
 # Données locales des étudiants
 students.txt
+
+stu*.tmp
+students.txt.lock
+students.txt.csv
