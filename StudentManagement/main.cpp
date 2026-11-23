@@ -10,6 +10,7 @@ using namespace std;
 struct Student {
     int id = 0;
     string name;
+    vector<double> grades; 
 };void saveStudents(const vector<Student>& students) {
     ofstream file("students.txt");
 
