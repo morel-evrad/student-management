@@ -373,8 +373,16 @@ int wmain(int argc, wchar_t* argv[]) {
                 cout << "Список студентов пуст.\n";
             }
             else {
-                for (const auto& s : students) {
-                    printStudent(s);
+                vector<const Student*> ordered;
+                ordered.reserve(students.size());
+                for (const auto& student : students) {
+                    ordered.push_back(&student);
+                }
+                sort(ordered.begin(), ordered.end(), [](const Student* left, const Student* right) {
+                    return left->id < right->id;
+                });
+                for (const auto* student : ordered) {
+                    printStudent(*student);
                 }
             }
         }
