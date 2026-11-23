@@ -150,6 +150,40 @@ bool readName(string& name) {
     return true;
 }
 
+vector<Student>::iterator readStudent(vector<Student>& students) {
+    int id;
+    cout << "Введите ID студента: ";
+    if (!readNumber(id)) {
+        cout << "Ошибка ввода ID!\n";
+        return students.end();
+    }
+    const auto student = find_if(students.begin(), students.end(), [id](const Student& entry) {
+        return entry.id == id;
+    });
+    if (student == students.end()) {
+        cout << "Студент не найден!\n";
+    }
+    return student;
+}
+
+vector<double>::iterator readGradePosition(Student& student) {
+    auto& grades = student.grades;
+    if (grades.empty()) {
+        cout << "Нет оценок.\n";
+        return grades.end();
+    }
+    for (size_t i = 0; i < grades.size(); ++i) {
+        cout << i + 1 << ". " << grades[i] << '\n';
+    }
+    cout << "Введите номер оценки: ";
+    vector<double>::difference_type position;
+    if (!readNumber(position) || position < 1 || static_cast<size_t>(position) > grades.size()) {
+        cout << "Неверный номер оценки.\n";
+        return grades.end();
+    }
+    return grades.begin() + (position - 1);
+}
+
 class DataFileLock {
 public:
     explicit DataFileLock(const filesystem::path& path)
@@ -207,6 +241,7 @@ int wmain(int argc, wchar_t* argv[]) {
         cout << "5. Изменить данные студента\n";
         cout << "6. Добавить оценку студенту\n";
         cout << "7. Найти студентов по имени\n";
+        cout << "8. Исправить оценку\n";
         cout << "0. Выход\n";
         cout << "Выберите действие: ";
 
@@ -410,6 +445,27 @@ int wmain(int argc, wchar_t* argv[]) {
             if (!found) {
                 cout << "Студент не найден.\n";
             }
+        }
+        else if (choix == 8) {
+            const auto student = readStudent(students);
+            if (student == students.end()) {
+                continue;
+            }
+            const auto selected = readGradePosition(*student);
+            if (selected == student->grades.end()) {
+                continue;
+            }
+            double grade;
+            cout << "Введите новую оценку (0-20): ";
+            if (!readNumber(grade) || !validGrade(grade)) {
+                cout << "Ошибка! Оценка должна быть от 0 до 20.\n";
+                continue;
+            }
+            *selected = grade;
+            if (!saveStudents(students, dataPath)) {
+                return 1;
+            }
+            cout << "Оценка изменена.\n";
         }
         else {
             cout << "Неверный выбор!\n";
