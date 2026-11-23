@@ -11,7 +11,21 @@ struct Student {
     int id = 0;
     string name;
     vector<double> grades; 
-};void saveStudents(const vector<Student>& students) {
+};
+double calculateAverage(const Student& student) {
+    if (student.grades.empty()) {
+        return 0.0;
+    }
+
+    double sum = 0.0;
+
+    for (double grade : student.grades) {
+        sum += grade;
+    }
+
+    return sum / student.grades.size();
+}
+void saveStudents(const vector<Student>& students) {
     ofstream file("students.txt");
 
     if (!file.is_open()) {
