@@ -36,6 +36,11 @@ void saveStudents(const vector<Student>& students) {
     for (const auto& student : students) {
         file << student.id << "\n";
         file << student.name << "\n";
+        file << student.grades.size() << "\n";
+
+        for (double grade : student.grades) {
+            file << grade << "\n";
+        }
     }
 
     file.close();
@@ -57,7 +62,23 @@ void loadStudents(vector<Student>& students) {
         if (!getline(file, s.name)) {
             break;
         }
+        size_t gradeCount = 0;
 
+        if (!(file >> gradeCount)) {
+            break;
+        }
+
+        s.grades.clear();
+
+        for (size_t i = 0; i < gradeCount; i++) {
+            double grade;
+
+            if (!(file >> grade)) {
+                return;
+            }
+
+            s.grades.push_back(grade);
+        }
         students.push_back(s);
     }
 
