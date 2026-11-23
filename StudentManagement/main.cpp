@@ -81,7 +81,7 @@ void loadStudents(vector<Student>& students) {
         }
         students.push_back(s);
     }
-
+    
     file.close();
 }
 
