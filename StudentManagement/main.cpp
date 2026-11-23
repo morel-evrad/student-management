@@ -184,6 +184,35 @@ vector<double>::iterator readGradePosition(Student& student) {
     return grades.begin() + (position - 1);
 }
 
+void printGradeSummary(const vector<Student>& students) {
+    size_t gradedStudents = 0;
+    size_t gradeCount = 0;
+    double sum = 0;
+    double lowest = 20;
+    double highest = 0;
+    for (const auto& student : students) {
+        if (!student.grades.empty()) {
+            ++gradedStudents;
+        }
+        for (double grade : student.grades) {
+            ++gradeCount;
+            sum += grade;
+            if (grade < lowest) {
+                lowest = grade;
+            }
+            if (grade > highest) {
+                highest = grade;
+            }
+        }
+    }
+    cout << "Студентов с оценками: " << gradedStudents << " / " << students.size() << '\n';
+    cout << "Всего оценок: " << gradeCount << '\n';
+    if (gradeCount != 0) {
+        cout << "Среднее всех оценок: " << sum / gradeCount << '\n'
+            << "Минимум: " << lowest << " | Максимум: " << highest << '\n';
+    }
+}
+
 class DataFileLock {
 public:
     explicit DataFileLock(const filesystem::path& path)
@@ -243,6 +272,7 @@ int wmain(int argc, wchar_t* argv[]) {
         cout << "7. Найти студентов по имени\n";
         cout << "8. Исправить оценку\n";
         cout << "9. Удалить оценку\n";
+        cout << "10. Показать статистику оценок\n";
         cout << "0. Выход\n";
         cout << "Выберите действие: ";
 
@@ -488,6 +518,9 @@ int wmain(int argc, wchar_t* argv[]) {
                 return 1;
             }
             cout << "Оценка удалена.\n";
+        }
+        else if (choix == 10) {
+            printGradeSummary(students);
         }
         else {
             cout << "Неверный выбор!\n";
