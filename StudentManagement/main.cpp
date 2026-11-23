@@ -5,6 +5,7 @@
 #include <string>
 #include <limits>
 #include <fstream>
+#include <sstream>
 using namespace std;
 
 struct Student {
@@ -85,6 +86,17 @@ void loadStudents(vector<Student>& students) {
     file.close();
 }
 
+template <typename Number>
+bool readNumber(Number& number) {
+    string line;
+    if (!getline(cin, line)) {
+        return false;
+    }
+
+    istringstream input(line);
+    return (input >> number) && (input >> ws).eof();
+}
+
 int main() {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
@@ -92,9 +104,7 @@ int main() {
     vector<Student> students;
     loadStudents(students);
 
-    int choix;
-
-    do {
+    while (true) {
         cout << "\n=== СИСТЕМА УПРАВЛЕНИЯ СТУДЕНТАМИ ===\n";
         cout << "1. Добавить студента\n";
         cout << "2. Показать список студентов\n";
@@ -105,20 +115,26 @@ int main() {
         cout << "0. Выход\n";
         cout << "Выберите действие: ";
 
-        if (!(cin >> choix)) {
+        int choix;
+        if (!readNumber(choix)) {
+            if (!cin) {
+                break;
+            }
             cout << "Ошибка ввода!\n";
-            return 1;
+            continue;
+        }
+        if (choix == 0) {
+            break;
         }
 
         if (choix == 1) {
             Student s;
             cout << "Введите ID студента: ";
-            if (!(cin >> s.id)) {
+            if (!readNumber(s.id)) {
                 cout << "Ошибка ввода ID!\n";
-                return 1;
+                continue;
             }
 
-            cin.ignore((numeric_limits<streamsize>::max)(), '\n');
             cout << "Введите имя студента: ";
             getline(cin, s.name);
 
@@ -142,9 +158,9 @@ int main() {
             bool found = false;
 
             cout << "Введите ID для поиска: ";
-            if (!(cin >> id)) {
+            if (!readNumber(id)) {
                 cout << "Ошибка ввода ID!\n";
-                return 1;
+                continue;
             }
 
             for (const auto& s : students) {
@@ -162,7 +178,10 @@ int main() {
         else if (choix == 4) {
             int id;
             cout << "Введите ID студента для удаления: ";
-            cin >> id;
+            if (!readNumber(id)) {
+                cout << "Ошибка ввода ID!\n";
+                continue;
+            }
 
             bool found = false;
 
@@ -184,7 +203,10 @@ int main() {
         else if (choix == 5) {
             int id;
             cout << "Введите ID студента: ";
-            cin >> id;
+            if (!readNumber(id)) {
+                cout << "Ошибка ввода ID!\n";
+                continue;
+            }
 
             bool found = false;
 
@@ -195,7 +217,6 @@ int main() {
                     cout << "Текущее имя: " << student.name << "\n";
                     cout << "Введите новое имя: ";
 
-                    cin.ignore(10000, '\n');
                     getline(cin, student.name);
 
                     saveStudents(students);
@@ -213,9 +234,9 @@ int main() {
             int id;
             cout << "Введите ID студента: ";
 
-            if (!(cin >> id)) {
+            if (!readNumber(id)) {
                 cout << "Ошибка ввода ID!\n";
-                return 1;
+                continue;
             }
 
             bool found = false;
@@ -227,10 +248,8 @@ int main() {
                     double grade;
                     cout << "Введите оценку (0-20): ";
 
-                    if (!(cin >> grade) || grade < 0 || grade > 20) {
+                    if (!readNumber(grade) || grade < 0 || grade > 20) {
                         cout << "Ошибка! Оценка должна быть от 0 до 20.\n";
-                        cin.clear();
-                        cin.ignore((numeric_limits<streamsize>::max)(), '\n');
                         break;
                     }
 
@@ -249,11 +268,11 @@ int main() {
                 cout << "Студент не найден!\n";
             }
         }
-        else if (choix != 0) {
+        else {
             cout << "Неверный выбор!\n";
         }
 
-    } while (choix != 0);
+    }
 
     cout << "Завершение программы.\n";
     return 0;
