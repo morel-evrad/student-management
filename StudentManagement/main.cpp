@@ -116,7 +116,12 @@ bool loadStudents(vector<Student>& students, const filesystem::path& dataPath) {
     vector<Student> loaded;
     unordered_set<int> ids;
     string line;
+    bool firstLine = true;
     while (getline(file, line)) {
+        if (firstLine && line.starts_with("\xEF\xBB\xBF")) {
+            line.erase(0, 3);
+        }
+        firstLine = false;
         Student student;
         long long gradeCount;
         if (!parseNumber(line, student.id) || !ids.insert(student.id).second ||

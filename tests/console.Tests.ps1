@@ -124,6 +124,12 @@ try {
     }
     Write-Output 'PASS: corrupt data protection, grade precision and failed file replacement'
 
+    $validData = [System.IO.File]::ReadAllText($data)
+    [System.IO.File]::WriteAllText($data, $validData, [System.Text.UTF8Encoding]::new($true))
+    $output = Invoke-StudentManagement @('3', '17', '0')
+    Assert-Contains $output 'ID: 17 | Имя: Anna | Оценки:'
+    Write-Output 'PASS: UTF-8 data with a byte order mark'
+
     $output = Invoke-StudentManagement @(
         '8', '17', '-1', '8', '17', '1', '50', '8', '17', '1', '16.5',
         '9', '17', '1', 'n', '6', '17', '9.5', '9', '17', '2', 'Y',
